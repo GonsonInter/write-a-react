@@ -58,8 +58,6 @@ describe("AReact JSX", () => {
       </div>
     );
 
-    console.log(JSON.stringify(element));
-
     const root = AReact.createRoot(container);
 
     await act(() => {
@@ -97,7 +95,6 @@ describe("AReact Concurrent", () => {
 
   it("ite should render jsx in async", async () => {
     const container = document.createElement("div");
-
     const element = (
       <div id="foo">
         <div id="bar"></div>
@@ -114,6 +111,63 @@ describe("AReact Concurrent", () => {
 
     expect(container.innerHTML).toBe(
       '<div id="foo"><div id="bar"></div><button></button></div>'
+    );
+  });
+});
+
+describe("Function Component", () => {
+  it("it should render function component", async () => {
+    const container = document.createElement("div");
+
+    const App = () => {
+      return (
+        <div id="foo">
+          <div id="bar"></div>
+          <button></button>
+        </div>
+      );
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(<App />);
+      expect(container.innerHTML).toBe("");
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo"><div id="bar"></div><button></button></div>'
+    );
+  });
+
+  it("it should render nested function component", async () => {
+    const container = document.createElement("div");
+
+    const App = props => {
+      return (
+        <div id="foo">
+          <div id="bar">{props.title}</div>
+          <button></button>
+          {props.children}
+        </div>
+      );
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(
+        <App title="main title">
+          <App title="sub title" />
+        </App>
+      );
+      expect(container.innerHTML).toBe("");
+    });
+
+    console.log(container.innerHTML);
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo"><div id="bar">main title</div><button></button><div id="foo"><div id="bar">sub title</div><button></button></div></div>'
     );
   });
 });

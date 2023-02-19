@@ -19,7 +19,7 @@ const createElement = (type, props, ...children) => {
     type,
     props: {
       ...props,
-      children: children.map(child => {
+      children: children.flat().map(child => {
         return typeof child !== "object" ? createTextElement(children) : child;
       }),
     },
@@ -60,22 +60,42 @@ const getNextFiber = fiber => {
 
 const performUnitOfWork = fiber => {
   /** 处理当前 fiber： 创建 DOM ，设置 props */
-  if (!fiber.stateNode) {
-    fiber.stateNode =
-      fiber.type === "HostText"
-        ? document.createTextNode("")
-        : document.createElement(fiber.type);
+  const isFunctionComponent = fiber.type instanceof Function;
 
-    Object.keys(fiber.props)
-      .filter(isProperty)
-      .forEach(key => {
-        fiber.stateNode[key] = fiber.props[key];
-      });
-  }
+  /**
+   * 对于函数式组件：
+   * - stateNode === null
+   * - 函数式组件的 children 不是来自于 props.children，而是自己的返回值
+   */
 
-  /**  插入当前 dom 到 parent */
-  if (fiber.return) {
-    fiber.return.stateNode.appendChild(fiber.stateNode);
+  if (isFunctionComponent) {
+    /** 处理函数式组件 */
+    fiber.props.children = [fiber.type(fiber.props)];
+  } else {
+    /** 处理 Host 组件 */
+    if (!fiber.stateNode) {
+      fiber.stateNode =
+        fiber.type === "HostText"
+          ? document.createTextNode("")
+          : document.createElement(fiber.type);
+
+      Object.keys(fiber.props)
+        .filter(isProperty)
+        .forEach(key => {
+          fiber.stateNode[key] = fiber.props[key];
+        });
+    }
+
+    /**  插入当前 dom 到 parent */
+    if (fiber.return) {
+      /** 函数式组件的 stateNode === null，需要向上查找，直到有一个节点存在 stateNode */
+      let domParentFiber = fiber.return;
+      while (!domParentFiber.stateNode) {
+        domParentFiber = domParentFiber.return;
+      }
+
+      domParentFiber.stateNode.appendChild(fiber.stateNode);
+    }
   }
 
   /** 初始化 children 的 fiber */
