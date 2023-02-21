@@ -27,11 +27,17 @@ const createElement = (type, props, ...children) => {
 };
 
 /**
+ * 判断属性是不是 事件
+ * @param {*} attr 属性名
+ */
+const isEvent = attr => attr.startsWith("on");
+
+/**
  * 是否为普通属性（非children）
  * @param {*} attr 属性名称
  * @returns boolean
  */
-const isProperty = attr => attr !== "children";
+const isProperty = attr => attr !== "children" && !isEvent(attr);
 
 let workInProgress = null;
 let workInProgressRoot = null;
@@ -90,6 +96,13 @@ const performUnitOfWork = fiber => {
         .filter(isProperty)
         .forEach(key => {
           fiber.stateNode[key] = fiber.props[key];
+        });
+
+      Object.keys(fiber.props)
+        .filter(isEvent)
+        .forEach(key => {
+          const eventName = key.toLocaleLowerCase().substring(2); // onClick => onclick
+          fiber.stateNode.addEventListener(eventName, fiber.props[key]);
         });
     }
 
