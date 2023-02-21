@@ -171,3 +171,37 @@ describe("Function Component", () => {
     );
   });
 });
+
+describe("Hooks", () => {
+  it("it should render useState", async () => {
+    const container = document.createElement("div");
+
+    const globalObject = {};
+
+    const App = () => {
+      const [count, setCount] = AReact.useState(100);
+
+      globalObject.count = count;
+      globalObject.setCount = setCount;
+
+      return <div>{count}</div>;
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(<App />);
+    });
+
+    await act(() => {
+      globalObject.setCount(count => count + 1);
+    });
+    expect(globalObject.count).toBe(101);
+
+    await act(() => {
+      globalObject.setCount(globalObject.count + 1);
+    });
+
+    expect(globalObject.count).toBe(102);
+  });
+});

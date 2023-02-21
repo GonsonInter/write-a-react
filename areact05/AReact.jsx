@@ -35,6 +35,8 @@ const isProperty = attr => attr !== "children";
 
 let workInProgress = null;
 let workInProgressRoot = null;
+let currentHookFiber = null;
+let currentHookIndex = 0;
 
 /** 根据当前的 fiber 获取下一个要处理的 fiber */
 const getNextFiber = fiber => {
@@ -70,6 +72,11 @@ const performUnitOfWork = fiber => {
 
   if (isFunctionComponent) {
     /** 处理函数式组件 */
+
+    currentHookFiber = fiber;
+    currentHookFiber.memorizedState = [];
+    currentHookIndex = 0;
+
     fiber.props.children = [fiber.type(fiber.props)];
   } else {
     /** 处理 Host 组件 */
@@ -100,13 +107,40 @@ const performUnitOfWork = fiber => {
 
   /** 初始化 children 的 fiber */
   let prevSibling = null;
+
+  /** mount 阶段，oldFiber 为空，update 阶段为上一次的值 */
+  let oldFiber = fiber.alternate?.child;
+
   fiber.props.children.forEach((child, index) => {
-    const newFiber = {
-      type: child.type,
-      stateNode: null,
-      props: child.props,
-      return: fiber,
-    };
+    let newFiber = null;
+
+    if (!oldFiber) {
+      /** mount 阶段 */
+      newFiber = {
+        type: child.type,
+        stateNode: null,
+        props: child.props,
+        return: fiber,
+        alternate: null,
+        child: null,
+        sibling: null,
+      };
+    } else {
+      /** update 阶段 */
+      newFiber = {
+        type: child.type,
+        stateNode: oldFiber.stateNode,
+        props: child.props,
+        return: fiber,
+        alternate: oldFiber,
+        child: null,
+        sibling: null,
+      };
+    }
+
+    if (oldFiber) {
+      oldFiber = oldFiber.sibling;
+    }
 
     if (index === 0) {
       fiber.child = newFiber;
@@ -124,6 +158,12 @@ const performUnitOfWork = fiber => {
 const workloop = () => {
   while (workInProgress) {
     workInProgress = performUnitOfWork(workInProgress);
+  }
+
+  /** 渲染完成后，切换 alternate 到主分支 */
+  if (!workInProgress && workInProgressRoot.current.alternate) {
+    workInProgressRoot.current = workInProgressRoot.current.alternate;
+    workInProgressRoot.current.alternate = null;
   }
 };
 
@@ -172,4 +212,42 @@ const act = callback => {
   });
 };
 
-export default { createElement, createRoot, act };
+const useState = initialState => {
+  const oldHook =
+    currentHookFiber.alternate?.memorizedState?.[currentHookIndex];
+
+  const hook = {
+    state: oldHook ? oldHook.state : initialState,
+    queue: [],
+    dispatch: oldHook ? oldHook.dispatch : null,
+  };
+
+  const actions = oldHook ? oldHook.queue : [];
+  actions.forEach(action => {
+    hook.state = typeof action === "function" ? action(hook.state) : action;
+  });
+
+  /** hook 中存在 setState 方法则复用，否则新建 */
+  const setState = hook.dispatch
+    ? hook.dispatch
+    : action => {
+        hook.queue.push(action);
+
+        // re-render
+        workInProgressRoot.current.alternate = {
+          stateNode: workInProgressRoot.current.containerInfo,
+          props: workInProgressRoot.current.props,
+          alternate: workInProgressRoot.current, // 交换 current 和 alternate 分枝
+        };
+
+        workInProgress = workInProgressRoot.current.alternate;
+        window.requestIdleCallback(workloop);
+      };
+
+  currentHookFiber.memorizedState.push(hook);
+  currentHookIndex++;
+
+  return [hook.state, setState];
+};
+
+export default { createElement, createRoot, act, useState };
