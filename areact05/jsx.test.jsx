@@ -204,4 +204,46 @@ describe("Hooks", () => {
 
     expect(globalObject.count).toBe(102);
   });
+
+  it("it should render useReducer", async () => {
+    const container = document.createElement("div");
+
+    const globalObject = {};
+
+    const reducer = (state, action) => {
+      switch (action.type) {
+        case "add":
+          return state + 1;
+        case "sub":
+          return state - 1;
+      }
+    };
+
+    const App = () => {
+      const [count, dispatch] = AReact.useReducer(reducer, 100);
+
+      globalObject.count = count;
+      globalObject.dispatch = dispatch;
+
+      return <div>{count}</div>;
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(<App />);
+    });
+
+    await act(() => {
+      globalObject.dispatch({ type: "add" });
+      globalObject.dispatch({ type: "add" });
+    });
+    expect(globalObject.count).toBe(102);
+
+    await act(() => {
+      globalObject.dispatch({ type: "sub" });
+    });
+
+    expect(globalObject.count).toBe(101);
+  });
 });
