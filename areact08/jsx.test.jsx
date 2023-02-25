@@ -369,3 +369,30 @@ describe("Style Object", () => {
     );
   });
 });
+
+describe("useEffect Hook", () => {
+  it("it should support useEffect", async () => {
+    const container = document.createElement("div");
+
+    const App = () => {
+      return (
+        <div id="foo" style={{ width: 100, fontSize: "22px" }}>
+          <div id="bar" style={{ display: "flex", justifyContent: "flex-end" }}>
+            test
+          </div>
+        </div>
+      );
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(<App />);
+      expect(container.innerHTML).toBe("");
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo" style="width: 100px; font-size: 22px;"><div id="bar" style="display: flex; justify-content: flex-end;">test</div></div>'
+    );
+  });
+});
