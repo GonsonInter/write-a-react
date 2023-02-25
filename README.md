@@ -25,3 +25,13 @@
 ### Reconciler 协调器
 
 DOM diff，render 和 commit 拆分
+
+---
+
+> 以上是课程内容，分别对应 areact 01 - 06
+
+> 以下为自己实现部分，分别对应 areact 07 - 09
+
+---
+
+### Style Object
