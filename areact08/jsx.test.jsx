@@ -375,11 +375,18 @@ describe("useEffect Hook", () => {
     const container = document.createElement("div");
 
     const App = () => {
+      const [count, setCount] = AReact.useState(0);
+      const [power, setPower] = AReact.useState(count * count);
+
+      AReact.useEffect(() => {
+        setPower(count * count);
+      }, [count]);
+
       return (
         <div id="foo" style={{ width: 100, fontSize: "22px" }}>
-          <div id="bar" style={{ display: "flex", justifyContent: "flex-end" }}>
-            test
-          </div>
+          <div>{count}</div>
+          <div>{power}</div>
+          <button onClick={() => setCount(s => s + 1)}>power</button>
         </div>
       );
     };
@@ -392,7 +399,34 @@ describe("useEffect Hook", () => {
     });
 
     expect(container.innerHTML).toBe(
-      '<div id="foo" style="width: 100px; font-size: 22px;"><div id="bar" style="display: flex; justify-content: flex-end;">test</div></div>'
+      '<div id="foo" style="width: 100px; font-size: 22px;"><div>0</div><div>0</div><button>power</button></div>'
     );
+
+    await act(() => {
+      container.querySelectorAll("button")[0].click();
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo" style="width: 100px; font-size: 22px;"><div>1</div><div>1</div><button>power</button></div>'
+    );
+
+    await act(() => {
+      container.querySelectorAll("button")[0].click();
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo" style="width: 100px; font-size: 22px;"><div>2</div><div>4</div><button>power</button></div>'
+    );
+
+    await act(() => {
+      container.querySelectorAll("button")[0].click();
+    });
+
+    expect(power).toBe(9);
+
+    await act(() => {
+      container.querySelectorAll("button")[0].click();
+    });
+    expect(power).toBe(16);
   });
 });
