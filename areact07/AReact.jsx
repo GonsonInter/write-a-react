@@ -1,4 +1,5 @@
 import "../requestIdleCallbackPolyFill";
+import { setStyleByObject } from "./utils";
 
 const createTextElement = text => {
   return {
@@ -29,11 +30,15 @@ const createElement = (type, props, ...children) => {
 const isEvent = attr => attr.startsWith("on");
 
 /**
- * 是否为普通属性（非children）
+ * 是否为普通属性（非children 非style）
  * @param {*} attr 属性名称
  * @returns boolean
  */
-const isProperty = attr => attr !== "children" && !isEvent(attr);
+const isProperty = attr =>
+  attr !== "children" && !isEvent(attr) && !isStyleProperty(attr);
+
+/** 是否为 style 属性  */
+const isStyleProperty = attr => attr === "style";
 
 const isGone = (prev, next) => key => !(key in next);
 const isNew = (prev, next) => key => !(key in prev) && key in next;
@@ -83,7 +88,7 @@ const updateDom = (stateNode, prevProps, nextProps) => {
 
   // remove deleted props
   Object.keys(prevProps)
-    .filter(isProperty)
+    .filter(key => isProperty(key) || isStyleProperty(key))
     .filter(isGone(prevProps, nextProps))
     .forEach(key => {
       stateNode[key] = "";
@@ -91,13 +96,17 @@ const updateDom = (stateNode, prevProps, nextProps) => {
 
   // set new or changed props
   Object.keys(nextProps)
-    .filter(isProperty)
+    .filter(key => isProperty(key) || isStyleProperty(key))
     .filter(
       key =>
         isNew(prevProps, nextProps)(key) || isChanged(prevProps, nextProps)(key)
     )
     .forEach(key => {
-      stateNode[key] = nextProps[key];
+      if (isStyleProperty(key)) {
+        setStyleByObject(stateNode[key], nextProps[key]);
+      } else {
+        stateNode[key] = nextProps[key];
+      }
     });
 
   // add new or event binding
