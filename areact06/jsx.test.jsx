@@ -296,7 +296,6 @@ describe("Reconciler", () => {
       return (
         <div id="foo">
           {count}
-          <div id="bar"></div>
           <button onClick={() => setCount(s => s + 1)}>add</button>
           <button onClick={() => setCount(s => s - 1)}>sub</button>
           <ul>
@@ -317,8 +316,29 @@ describe("Reconciler", () => {
       expect(container.innerHTML).toBe("");
     });
 
+    await act(() => {
+      container.querySelectorAll("button")[0].click();
+    });
+
     expect(container.innerHTML).toBe(
-      '<div id="foo">2<div id="bar"></div><button>add</button><button>sub</button><ul><li>0</li><li>1</li></ul></div>'
+      '<div id="foo">3<button>add</button><button>sub</button><ul><li>0</li><li>1</li><li>2</li></ul></div>'
+    );
+
+    await act(() => {
+      container.querySelectorAll("button")[1].click();
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo">2<button>add</button><button>sub</button><ul><li>0</li><li>1</li></ul></div>'
+    );
+
+    await act(() => {
+      container.querySelectorAll("button")[1].click();
+      container.querySelectorAll("button")[1].click();
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo">0<button>add</button><button>sub</button><ul></ul></div>'
     );
   });
 });
