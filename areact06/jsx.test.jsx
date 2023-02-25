@@ -285,3 +285,40 @@ describe("Event binding", () => {
     expect(increaseSpy).toBeCalledTimes(2);
   });
 });
+
+describe("Reconciler", () => {
+  it("it should support DOM CRUD", async () => {
+    const container = document.createElement("div");
+
+    const App = () => {
+      const [count, setCount] = AReact.useState(2);
+
+      return (
+        <div id="foo">
+          {count}
+          <div id="bar"></div>
+          <button onClick={() => setCount(s => s + 1)}>add</button>
+          <button onClick={() => setCount(s => s - 1)}>sub</button>
+          <ul>
+            {Array(count)
+              .fill(0)
+              .map((val, index) => (
+                <li>{index}</li>
+              ))}
+          </ul>
+        </div>
+      );
+    };
+
+    const root = AReact.createRoot(container);
+
+    await act(() => {
+      root.render(<App />);
+      expect(container.innerHTML).toBe("");
+    });
+
+    expect(container.innerHTML).toBe(
+      '<div id="foo">2<div id="bar"></div><button>add</button><button>sub</button><ul><li>0</li><li>1</li></ul></div>'
+    );
+  });
+});

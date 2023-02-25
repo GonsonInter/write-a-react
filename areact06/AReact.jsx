@@ -1,7 +1,3 @@
-/**
- * createElement 函数
- */
-
 import "../requestIdleCallbackPolyFill";
 
 const createTextElement = text => {
@@ -20,7 +16,7 @@ const createElement = (type, props, ...children) => {
     props: {
       ...props,
       children: children.flat().map(child => {
-        return typeof child !== "object" ? createTextElement(children) : child;
+        return typeof child !== "object" ? createTextElement(child) : child;
       }),
     },
   };
@@ -211,20 +207,6 @@ const createRoot = container => {
   return new AReactDomRoot(container);
 };
 
-const act = callback => {
-  callback();
-  return new Promise(resolve => {
-    const loop = () => {
-      if (workInProgress) {
-        window.requestIdleCallback(loop);
-      } else {
-        resolve();
-      }
-    };
-    loop();
-  });
-};
-
 const useState = initialState => {
   const oldHook =
     currentHookFiber.alternate?.memorizedState?.[currentHookIndex];
@@ -271,6 +253,20 @@ const useReducer = (reducer, initialState) => {
   };
 
   return [state, dispatch];
+};
+
+const act = callback => {
+  callback();
+  return new Promise(resolve => {
+    const loop = () => {
+      if (workInProgress) {
+        window.requestIdleCallback(loop);
+      } else {
+        resolve();
+      }
+    };
+    loop();
+  });
 };
 
 export default { createElement, createRoot, act, useState, useReducer };

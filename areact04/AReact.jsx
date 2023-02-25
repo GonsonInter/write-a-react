@@ -20,7 +20,7 @@ const createElement = (type, props, ...children) => {
     props: {
       ...props,
       children: children.flat().map(child => {
-        return typeof child !== "object" ? createTextElement(children) : child;
+        return typeof child !== "object" ? createTextElement(child) : child;
       }),
     },
   };
